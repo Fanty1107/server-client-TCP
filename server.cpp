@@ -1,5 +1,6 @@
 #include <iostream>
 #include <netinet/in.h>
+#include <ostream>
 #include <string>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -42,7 +43,8 @@ std::string processMessageFromClient(const char *buffer) {
 }
 
 int main() {
-    int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+  bool initRun = true;
+      int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket < 0) {
         std::cerr << "error creating socket\n";
         return 1;
@@ -66,13 +68,15 @@ int main() {
         return 1;
     }
 
+
+  while (initRun) {
     int clientSocket = accept(serverSocket, nullptr, nullptr);
     if (clientSocket < 0) {
         std::cerr << "error to accept\n";
-        close(serverSocket);
-        return 1;
+        continue;
     }
-
+    std::cout << "new client created" << std::endl;
+    while (true) {
     char buffer[1024];
     ssize_t bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
 
@@ -82,14 +86,18 @@ int main() {
 
         std::string messageToClient = processMessageFromClient(buffer);
         sendingData(clientSocket, messageToClient);
+        break;
     } else if (bytesReceived == 0) {
         std::cout << "Client disconnected before sending data\n";
+        break;
     } else {
         std::cerr << "recv error\n";
+        break;
     }
-
+    
+    }
     close(clientSocket);
+  }
     close(serverSocket);
-
     return 0;
 }

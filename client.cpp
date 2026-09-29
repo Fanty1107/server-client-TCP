@@ -36,8 +36,7 @@ int main() {
         std::cerr << "Erro ao enviar mensagem\n";
         close(clientSocket);
         return 1;
-    }
-
+      }
     char buffer[1024];
     ssize_t bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
     if (bytesReceived > 0) {
