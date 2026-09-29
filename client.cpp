@@ -1,37 +1,54 @@
-#include <cstring>
+#include <arpa/inet.h>
 #include <iostream>
 #include <netinet/in.h>
+#include <string>
 #include <sys/socket.h>
 #include <unistd.h>
 
-int main()
-{
-    // creating socket
+int main() {
     int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (clientSocket < 0) {
+        std::cerr << "Erro ao criar o socket\n";
+        return 1;
+    }
 
-    // specifying address
-    sockaddr_in serverAddress;
+    sockaddr_in serverAddress = {0};
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(8080);
-    serverAddress.sin_addr.s_addr = INADDR_ANY;
+    if (inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr) <= 0) {
+        std::cerr << "Endereço inválido\n";
+        close(clientSocket);
+        return 1;
+    }
 
-    // sending connection request
-    int conn = connect(clientSocket, (struct sockaddr*)&serverAddress,
-            sizeof(serverAddress));
+    int conn = connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress));
     if (conn < 0) {
-      std::cerr << "Unable to connect to server make sure the server is up\n";
-      return 1;
+        std::cerr << "Não foi possível conectar ao servidor. Verifique se o servidor está rodando.\n";
+        close(clientSocket);
+        return 1;
     }
+    std::string input;
+    std::cout << "Enter your message to server: ";
+    std::getline(std::cin, input);
 
-    // sending data
-    const char* message = "what tha dog doing";
-    int s = send(clientSocket, message, strlen(message), 0);
+    ssize_t s = send(clientSocket, input.c_str(), input.size(), 0);
     if (s < 0) {
-      std::cerr << "error on send message\n"; 
+        std::cerr << "Erro ao enviar mensagem\n";
+        close(clientSocket);
+        return 1;
     }
 
-    // closing socket
-    close(clientSocket);
+    char buffer[1024];
+    ssize_t bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+    if (bytesReceived > 0) {
+        buffer[bytesReceived] = '\0';
+        std::cout << "Resposta do servidor: " << buffer;
+    } else if (bytesReceived == 0) {
+        std::cout << "Servidor fechou a conexão antes de responder.\n";
+    } else {
+        std::cerr << "Erro ao receber resposta do servidor\n";
+    }
 
+    close(clientSocket);
     return 0;
 }
