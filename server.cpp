@@ -42,7 +42,6 @@ std::string processMessageFromClient(const char *buffer) {
 }
 
 int main() {
-    // 1. Criar socket com validação
     int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket < 0) {
         std::cerr << "error creating socket\n";
@@ -78,7 +77,7 @@ int main() {
     ssize_t bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
 
     if (bytesReceived > 0) {
-        buffer[bytesReceived] = '\0'; // Garante o término de string
+        buffer[bytesReceived] = '\0'; 
         std::cout << "Message from client: " << buffer << std::endl;
 
         std::string messageToClient = processMessageFromClient(buffer);
